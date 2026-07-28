@@ -101,7 +101,7 @@ Codex CLI 进入本项目目录时会自动发现以下配置：
 | 机制 | 文件 | 说明 |
 |------|------|------|
 | AGENTS.md 自动加载 | `AGENTS.md`（根目录） | Codex 自动读取，无需手动操作 |
-| Skill 自动发现 | `.agents/skills/cn-trip/SKILL.md` | 用户可用 `/cn-trip` 触发 |
+| Skill 自动发现 | `.agents/skills/cn-trip/SKILL.md` | Codex 自动发现 skill |
 | Excel 生成 | `scripts/generate-excel.js` | Node.js 脚本，自动安装依赖 |
 
 克隆后进入目录即可使用，零配置。

@@ -200,21 +200,15 @@ cd cn-trip
 codex
 ```
 
-Codex 会自动加载项目配置，直接描述需求：
+Codex 会自动加载项目配置，直接描述需求即可：
 
 ```text
 帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
 ```
 
-也可用 skill 命令显式触发：
-
-```text
-/cn-trip 帮我规划去云南
-```
-
 自动生效的机制：
-- `AGENTS.md` → Codex 启动时自动读取
-- `.agents/skills/cn-trip/SKILL.md` → Codex 自动发现，支持 `/cn-trip` 触发
+- `AGENTS.md` → Codex 启动时自动读取项目指令
+- `.agents/skills/cn-trip/SKILL.md` → Codex 自动发现 skill
 
 ### 在 Claude API / Anthropic SDK 中使用
 
@@ -259,7 +253,7 @@ cn-trip/
   Claude Code hook 配置。SessionStart 自动注入 cn-trip 上下文，BeforeCommand 支持 `cn-trip` 前缀触发
 
 - `.agents/skills/cn-trip/SKILL.md`
-  Codex CLI skill 入口。放入 `.agents/skills/` 下后 Codex 会自动发现，用户可用 `/cn-trip` 触发
+  Codex CLI skill 入口。放入 `.agents/skills/` 下后 Codex 会自动发现
 
 - `CLAUDE.md`
   Claude Code 项目指令，定义工作流映射与工具使用方式
