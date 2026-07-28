@@ -11,8 +11,7 @@
     <a href="https://github.com/worenbudaoni/cn-trip/stargazers"><img src="https://img.shields.io/github/stars/worenbudaoni/cn-trip?style=social" alt="GitHub Stars"></a>
     <a href="https://github.com/worenbudaoni/cn-trip/forks"><img src="https://img.shields.io/github/forks/worenbudaoni/cn-trip?style=social" alt="GitHub Forks"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
-    <a href="https://img.shields.io/badge/platform-Codex%20%7C%20Claude%20%7C%20Agent-blue"><img src="https://img.shields.io/badge/platform-Codex%20%7C%20Claude%20%7C%20Agent-blue" alt="Platform"></a>
-    <a href="https://img.shields.io/badge/os-Windows%20%7C%20Linux%20%7C%20CentOS%20%7C%20macOS-orange"><img src="https://img.shields.io/badge/os-Windows%20%7C%20Linux%20%7C%20CentOS%20%7C%20macOS-orange" alt="OS"></a>
+    <a href="https://img.shields.io/badge/platform-Codex%20%7C%20Claude%20%7C%20Claude%20Code%20%7C%20Agent-blue"><img src="https://img.shields.io/badge/platform-Codex%20%7C%20Claude%20%7C%20Claude%20Code%20%7C%20Agent-blue" alt="Platform"></a>
   </p>
   <p align="center">
     <a href="#项目定位">项目定位</a> ·
@@ -149,32 +148,20 @@
 - Claude
 - 其他支持 Prompt / Tool / Workflow 的 Agent 系统
 
-当前仓库同时提供了一套 **Codex 风格适配封装**：
+当前仓库同时提供了各平台的适配封装：
 
-- `SKILL.md`
-- `agents/openai.yaml`
-- `references/excel-layout.md`
+| 文件 | 适配平台 | 用途 |
+|------|---------|------|
+| `CLAUDE.md` | **Claude Code** | Claude Code 项目指令与工作流映射 |
+| `AGENTS.md` | **通用 Agent 框架** | Claude API、Anthropic SDK、GPTs、LangChain 等集成参考 |
+| `SKILL.md` | Codex / 通用 | Skill 主入口，定义流程规则 |
+| `agents/openai.yaml` | **Codex / OpenAI** | Codex 风格元数据 |
+| `references/excel-layout.md` | **全部平台** | Excel 输出结构与校验契约 |
 
-因此需要区分两层：
+因此需要理解两层：
 
-- 作为规划规范：通用
-- 作为安装即用的 Skill 包：当前优先适配 Codex 类机制
-
-### 操作系统兼容性
-
-规划规范本身可在以下环境中复用：
-
-- Windows
-- Linux
-- CentOS
-- macOS
-
-需要区分的是：
-
-- **规划层**：跨平台
-- **本地 Excel 导出层**：取决于是否接入稳定导出器
-
-也就是说，本仓库中的 Markdown 规则天然跨平台；真正的 `.xlsx` 自动生成是否稳定，取决于你的导出实现，而不是本仓库本身。
+- **作为规划规范**：通用，所有平台都能用
+- **作为安装即用的 Skill 包**：根据平台选择对应的适配文件
 
 ## 快速开始
 
@@ -196,33 +183,59 @@
 我想 8 月从上海出发去西藏玩 8 天，单人预算 5000，$cn-trip
 ```
 
-### 在 Claude 或其他 Agent 中使用
+### 在 Claude Code 中使用
 
-建议将以下两个文件作为核心输入：
+本仓库的 `CLAUDE.md` 已提供完整的项目指令配置。克隆或下载项目后，在仓库目录下直接运行 Claude Code 即可：
 
-- `SKILL.md`
-- `references/excel-layout.md`
+```text
+cd cn-trip
+claude
+```
 
-说明：
+然后在对话中自然描述需求：
 
-- `SKILL.md` 定义规划流程和回答规则
-- `excel-layout.md` 定义输出结构和导出校验契约
-- `agents/openai.yaml` 属于 Codex / OpenAI 风格元数据，不保证其他平台直接识别
+```text
+帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
+```
+
+Claude 会自动读取 `CLAUDE.md` 中的指令，进而调用 `SKILL.md` 和 `references/excel-layout.md` 执行规划。
+
+### 在 Claude API / Anthropic SDK 中使用
+
+参考 `AGENTS.md`，将 `SKILL.md` 内容作为 System Prompt 的一部分注入，配合 `references/excel-layout.md` 作为输出结构参考。
+
+建议通过 Tool Use / Function Calling 实现 Excel 生成能力。
+
+### 在其他 Agent 框架（GPTs、LangChain 等）中使用
+
+参考 `AGENTS.md` 的通用集成建议：
+
+- `SKILL.md` → 规划流程 Prompt Template
+- `references/excel-layout.md` → 输出格式 Reference
+- 根据平台能力选择 Excel 生成方案（自定义工具 / 代码执行 / 文件生成 API）
 
 ## 仓库结构
 
 ```text
 cn-trip/
-├── SKILL.md
+├── CLAUDE.md                    # Claude Code 项目指令
+├── AGENTS.md                    # 通用 Agent 框架适配说明
+├── SKILL.md                     # Skill 主入口（Codex / 通用）
 ├── README.md
 ├── LICENSE
 ├── agents/
-│   └── openai.yaml
+│   └── openai.yaml              # Codex / OpenAI 风格元数据
 └── references/
-    └── excel-layout.md
+    └── excel-layout.md           # Excel 输出结构定义
 ```
 
 文件说明：
+
+- `CLAUDE.md`
+  Claude Code 项目指令，定义工作流映射与工具使用方式
+
+- `AGENTS.md`
+  通用 Agent 框架适配说明，帮助 Claude API、Anthropic SDK、GPTs、LangChain 等集成本规范
 
 - `SKILL.md`
   Skill 主入口，定义触发场景、规划流程和约束规则
@@ -261,29 +274,6 @@ cn-trip/
 - 美食 / 文化信息整理
 - Excel 结构组织
 
-### 导出层
-
-由本地导出器、脚本或受控程序负责：
-
-- 生成真实 `.xlsx`
-- 校验 sheet 名和中文文本完整性
-- 保存到指定路径
-
-这样做的好处是：
-
-- 规划逻辑可复用
-- 平台差异被隔离
-- 导出问题不会污染规划流程
-
-## 后续扩展方向
-
-如果你希望把它进一步做成多平台可复用的完整项目，建议后续补充：
-
-- Claude 专用适配说明
-- 通用 JSON Schema
-- 独立跨平台 Excel 导出器
-- 平台级安装与集成脚本
-
 ## License
 
-See [LICENSE](./LICENSE).
+[LICENSE](./LICENSE).
