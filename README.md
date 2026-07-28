@@ -167,62 +167,98 @@
 
 ## 快速开始
 
-**克隆项目，进入目录，直接使用。** 无需手动安装或复制任何文件。
+`cn-trip` 的目标是：**clone 下来，进入目录，马上能用。**
 
-### 在 Claude Code 中使用
+前提：
+
+- 已安装 `git`
+- 已安装 `Node.js`
+- 已安装你要使用的 Agent CLI：`claude` 或 `codex`
+
+### 1. 克隆项目
 
 ```bash
 git clone <repo-url>
 cd cn-trip
+```
+
+### 2. 选择运行方式
+
+#### Claude Code
+
+```bash
 claude
 ```
 
-进入项目后直接自然语言描述需求即可（hook 会自动加载规划流程）：
+进入会话后，直接用自然语言提出旅行需求：
 
 ```text
 帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
 ```
 
-也可以在非旅行对话中主动触发：
+也可以用显式前缀触发：
 
 ```text
 cn-trip 帮我规划去云南
 ```
 
-自动生效的机制：
-- `.claude/settings.json` hooks → SessionStart 自动注入上下文 + `cn-trip` 前缀触发
+生效机制：
 
-### 在 Codex CLI 中使用
+- `.claude/settings.json` 在会话启动时注入项目上下文
+- `CLAUDE.md` 说明 Claude Code 应如何执行这套流程
+- `SKILL.md` 和 `references/excel-layout.md` 提供规划与导出规则
+
+#### Codex CLI
 
 ```bash
-git clone <repo-url>
-cd cn-trip
 codex
 ```
 
-Codex 会自动加载项目配置，直接描述需求即可：
+进入会话后，同样直接描述需求：
 
 ```text
 帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
 ```
 
-自动生效的机制：
-- `AGENTS.md` → Codex 启动时自动读取项目指令
-- `.agents/skills/cn-trip/SKILL.md` → Codex 自动发现 skill
+Codex 侧的生效机制：
 
-### 在 Claude API / Anthropic SDK 中使用
+- 根目录 `AGENTS.md` 会被自动读取
+- `.agents/skills/cn-trip/SKILL.md` 会被自动发现
+- 根目录 `SKILL.md` 是完整规则源
 
-参考 `AGENTS.md`，将 `SKILL.md` 内容作为 System Prompt 的一部分注入，配合 `references/excel-layout.md` 作为输出结构参考。
+### 3. 对话会如何进行
 
-建议通过 Tool Use / Function Calling 实现 Excel 生成能力。
+无论是 Claude Code 还是 Codex，正常流程都应是：
 
-### 在其他 Agent 框架（GPTs、LangChain 等）中使用
+1. 先说明边界，只做国内自由行，不做预订和实时导航
+2. 逐步收集约束：目的地、出发地、日期、天数、预算、同行人、自驾、返程
+3. 先做预算拆解，再判断路线是否成立
+4. 先给预览，再让你确认或修改
+5. 只有在你明确确认后，才导出 Excel
 
-参考 `AGENTS.md` 的通用集成建议：
+### 4. 导出 Excel
 
-- `SKILL.md` → 规划流程 Prompt Template
-- `references/excel-layout.md` → 输出格式 Reference
-- 根据平台能力选择 Excel 生成方案（自定义工具 / 代码执行 / 文件生成 API）
+仓库内置导出脚本：
+
+```bash
+node scripts/generate-excel.js --input plan.json --output 出发日期_目的地_天数_旅行方案.xlsx
+```
+
+说明：
+
+- 首次执行时会自动安装 `exceljs` 到本地 `node_modules/`
+- 默认导出 8 个 sheet
+- 脚本会在写入后校验 sheet 名、表头和代表性中文内容，避免把乱码文件当成功
+
+### 5. 用在 API / SDK / 其他 Agent 框架
+
+如果你不是直接用 Claude Code 或 Codex CLI，而是要接入自己的 Agent：
+
+- 把 `SKILL.md` 作为规划流程规则
+- 把 `references/excel-layout.md` 作为 Excel 输出契约
+- 用 `node scripts/generate-excel.js` 作为导出工具
+
+更详细的接入说明见 [AGENTS.md](./AGENTS.md)。
 
 ## 仓库结构
 
@@ -241,8 +277,6 @@ cn-trip/
 ├── LICENSE
 ├── scripts/
 │   └── generate-excel.js           # Node.js Excel 生成器（自动安装依赖）
-├── agents/
-│   └── openai.yaml                 # Codex / OpenAI 风格元数据
 └── references/
     └── excel-layout.md             # Excel 输出结构定义
 ```
@@ -269,9 +303,6 @@ cn-trip/
 
 - `references/excel-layout.md`
   Excel 输出结构、导出模式和校验约定
-
-- `agents/openai.yaml`
-  Codex / OpenAI 风格的 Skill 元数据
 
 ## 设计原则
 

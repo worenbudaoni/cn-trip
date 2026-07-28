@@ -12,6 +12,13 @@
 - 结构化输出（生成 JSON/Markdown/表格）
 - 文件生成（创建 `.xlsx`）
 
+如果你只是想直接使用，而不是自己集成：
+
+1. `git clone <repo-url>`
+2. `cd cn-trip`
+3. 在 Claude Code 中运行 `claude`，或在 Codex CLI 中运行 `codex`
+4. 直接提出旅行需求，Agent 会按 `SKILL.md` 和 `references/excel-layout.md` 的规则工作
+
 ---
 
 ## 核心文件的角色
@@ -79,6 +86,12 @@ system: 你是一个中国境内自由行规划助手。按以下规则工作：
 
 类似方案：将 `SKILL.md` 放入 instructions，将 `excel-layout.md` 作为知识文件上传。
 
+如果要把 Excel 导出也接进去，优先直接调用：
+
+```bash
+node scripts/generate-excel.js --input <plan.json> --output <output.xlsx>
+```
+
 ### 使用通用 Agent 框架（LangChain、CrewAI 等）
 
 将 `SKILL.md` 作为规划流程的 Prompt Template，将 `excel-layout.md` 作为输出格式的 Reference。
@@ -104,7 +117,19 @@ Codex CLI 进入本项目目录时会自动发现以下配置：
 | Skill 自动发现 | `.agents/skills/cn-trip/SKILL.md` | Codex 自动发现 skill |
 | Excel 生成 | `scripts/generate-excel.js` | Node.js 脚本，自动安装依赖 |
 
-克隆后进入目录即可使用，零配置。
+最短路径：
+
+```bash
+git clone <repo-url>
+cd cn-trip
+codex
+```
+
+进入会话后可直接说：
+
+```text
+帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
+```
 
 ---
 

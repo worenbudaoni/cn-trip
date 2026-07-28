@@ -12,6 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 // ─── 参数解析 ────────────────────────────────────────────────────────────────
 
@@ -37,7 +38,10 @@ async function loadExcelJS() {
   } catch {
     console.log('正在安装 exceljs...');
     const { execSync } = require('child_process');
-    execSync('npm install exceljs', { cwd: __dirname + '/..', stdio: 'inherit' });
+    execSync('npm install --no-save --no-package-lock exceljs', {
+      cwd: __dirname + '/..',
+      stdio: 'inherit'
+    });
     return require('exceljs');
   }
 }
@@ -45,7 +49,11 @@ async function loadExcelJS() {
 // ─── 工具 ─────────────────────────────────────────────────────────────────────
 
 function loadJSON(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  return JSON.parse(stripBom(fs.readFileSync(filePath, 'utf-8')));
+}
+
+function stripBom(text) {
+  return text.replace(/^\uFEFF/, '');
 }
 
 function sheetDefaults(sheet) {
@@ -58,10 +66,7 @@ function headerRow(sheet, columns, data) {
   row.font = { bold: true, size: 11, name: '微软雅黑' };
   row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F0FE' } };
   row.alignment = { vertical: 'middle', wrapText: true };
-  // 冻结首行
-  if (sheet.workbook._lastRow === 1) {
-    try { sheet.views = [{ state: 'frozen', ySplit: 1 }]; } catch {}
-  }
+  sheet.views = [{ state: 'frozen', ySplit: 1 }];
   return row;
 }
 
@@ -107,14 +112,14 @@ function buildSheet详细行程(wb, name, planData) {
   sheetDefaults(sheet);
   headerRow(sheet, null, ['天数', '时段', '城市/区域', '安排', '建议停留时长',
     '交通方式', '交通费用参考', '交通参考依据', '住宿费用参考', '门票/体验费用参考',
-    '餐饮店铺推荐', '餐饮费用参考', '返程衔接', '是否适合自驾', '备注']);
+    '餐饮店铺推荐', '餐饮费用参考', '返程衔接', '是否适合自驾', '餐饮建议', '备注']);
   (planData || []).forEach(row => dataRow(sheet, [
     row.天数 || '', row.时段 || '', row.城市区域 || row['城市/区域'] || '',
     row.安排 || '', row.建议停留时长 || '', row.交通方式 || '',
     row.交通费用参考 || '', row.交通参考依据 || '', row.住宿费用参考 || '',
     row.门票体验费用参考 || row['门票/体验费用参考'] || '',
     row.餐饮店铺推荐 || '', row.餐饮费用参考 || '',
-    row.返程衔接 || '', row.是否适合自驾 || '', row.备注 || ''
+    row.返程衔接 || '', row.是否适合自驾 || '', row.餐饮建议 || '', row.备注 || ''
   ]));
   autoColWidths(sheet);
 }
@@ -183,11 +188,96 @@ function buildSheet8信息来源(wb, data) {
   autoColWidths(sheet);
 }
 
+function ensureOutputDirectory(filePath) {
+  const dir = path.dirname(path.resolve(filePath));
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+function needsUnicodeSafeRename(filePath) {
+  return /[^\x00-\x7F]/.test(path.basename(filePath));
+}
+
+async function writeWorkbookWithSafePath(workbook, outputFile) {
+  const resolvedOutput = path.resolve(outputFile);
+  ensureOutputDirectory(resolvedOutput);
+
+  if (!needsUnicodeSafeRename(resolvedOutput)) {
+    await workbook.xlsx.writeFile(resolvedOutput);
+    return resolvedOutput;
+  }
+
+  const tempName = `cn-trip-${Date.now()}.xlsx`;
+  const tempPath = path.join(os.tmpdir(), tempName);
+  await workbook.xlsx.writeFile(tempPath);
+  fs.renameSync(tempPath, resolvedOutput);
+  return resolvedOutput;
+}
+
+async function validateWorkbook(ExcelJS, outputFile) {
+  const expectedSheets = [
+    '行程总览',
+    '详细行程（主方案）',
+    '详细行程（备用方案）',
+    '预算拆分',
+    '出行准备清单',
+    '美食攻略',
+    '景点历史人文',
+    '信息来源'
+  ];
+  const expectedHeaders = {
+    '行程总览': ['方案', '出发地', '目的地'],
+    '详细行程（主方案）': ['天数', '时段', '城市/区域', '安排', '餐饮建议'],
+    '详细行程（备用方案）': ['天数', '时段', '城市/区域', '安排', '餐饮建议'],
+    '预算拆分': ['方案', '天数/时段', '关联安排'],
+    '出行准备清单': ['类别', '物品/事项', '是否必需'],
+    '美食攻略': ['城市/区域', '美食类型', '店铺名称'],
+    '景点历史人文': ['景点/区域', '历史人文主题', '背景简介'],
+    '信息来源': ['信息类型', '结论或用途', '来源名称']
+  };
+
+  const reopened = new ExcelJS.Workbook();
+  await reopened.xlsx.readFile(outputFile);
+  const actualSheets = reopened.worksheets.map(sheet => sheet.name);
+
+  if (actualSheets.length !== expectedSheets.length) {
+    throw new Error(`sheet 数量不正确: ${actualSheets.length}`);
+  }
+
+  for (const expectedSheet of expectedSheets) {
+    if (!actualSheets.includes(expectedSheet)) {
+      throw new Error(`缺少 sheet: ${expectedSheet}`);
+    }
+    if (/\?{1,}/.test(expectedSheet)) {
+      throw new Error(`sheet 名乱码: ${expectedSheet}`);
+    }
+  }
+
+  for (const [sheetName, headers] of Object.entries(expectedHeaders)) {
+    const sheet = reopened.getWorksheet(sheetName);
+    const firstRow = sheet.getRow(1);
+    const values = firstRow.values.slice(1).map(value => String(value || ''));
+    for (const header of headers) {
+      if (!values.includes(header)) {
+        throw new Error(`${sheetName} 表头缺失: ${header}`);
+      }
+    }
+    const sampledRows = [1, 2, Math.min(sheet.rowCount, 3)]
+      .filter((rowNumber, index, rows) => rows.indexOf(rowNumber) === index);
+    for (const rowNumber of sampledRows) {
+      const row = sheet.getRow(rowNumber);
+      const rowText = row.values.slice(1).map(value => String(value || '')).join(' | ');
+      if (/\?{1,}/.test(rowText)) {
+        throw new Error(`${sheetName} 第 ${rowNumber} 行出现乱码`);
+      }
+    }
+  }
+}
+
 // ─── 主流程 ───────────────────────────────────────────────────────────────────
 
 async function main() {
   const planData = useStdin
-    ? JSON.parse(fs.readFileSync(0, 'utf-8'))
+    ? JSON.parse(stripBom(fs.readFileSync(0, 'utf-8')))
     : loadJSON(inputPath);
 
   const outputFile = outputPath || (inputPath
@@ -210,11 +300,12 @@ async function main() {
   buildSheet7景点历史人文(wb, planData);
   buildSheet8信息来源(wb, planData);
 
-  await wb.xlsx.writeFile(outputFile);
-  console.log(`✅ Excel 已生成: ${path.resolve(outputFile)}`);
+  const writtenFile = await writeWorkbookWithSafePath(wb, outputFile);
+  await validateWorkbook(ExcelJS, writtenFile);
+  console.log(`✅ Excel 已生成: ${writtenFile}`);
 
   // 简单校验
-  const stats = fs.statSync(outputFile);
+  const stats = fs.statSync(writtenFile);
   if (stats.size < 1000) {
     console.warn('⚠️  文件过小，请检查内容是否完整');
   }

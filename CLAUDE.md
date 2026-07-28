@@ -6,14 +6,15 @@
 
 ## 快速开始
 
-克隆项目后直接进入目录运行 Claude Code：
+从 clone 到使用的最短路径：
 
 ```bash
+git clone <repo-url>
 cd cn-trip
 claude
 ```
 
-在对话中自然语言描述需求即可（hooks 自动加载规划流程）：
+进入会话后，直接描述旅行需求即可（hooks 会自动加载项目上下文）：
 
 ```
 帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
@@ -24,6 +25,14 @@ claude
 ```
 cn-trip 帮我规划去云南
 ```
+
+标准使用流程：
+
+1. Claude 先说明边界，只做国内自由行规划，不做预订和实时导航
+2. 然后逐步收集约束，而不是一次性抛整张表
+3. 先拆预算，再给路线
+4. 先给预览，再等用户确认
+5. 只有确认后，才导出 Excel
 
 ---
 
@@ -92,10 +101,10 @@ cn-trip 帮我规划去云南
 ## Excel 导出注意事项
 
 - Claude Code 通过 `Bash` 工具执行 `node scripts/generate-excel.js` 来生成 `.xlsx` 文件
-- 脚本会自动安装 `exceljs` 依赖，无需手动 `npm install`
+- 首次执行时脚本会自动安装 `exceljs` 到本地 `node_modules/`
 - 默认导出到桌面，保存路径会报告给用户
 - 文件名格式：`出发日期_目的地_天数_旅行方案.xlsx`
-- 导出后应验证文件完整性（中文内容不出现 `?` 乱码）
+- 导出后应验证文件完整性，至少检查 8 个 sheet、中文 sheet 名、表头和代表性内容不出现 `?` 乱码
 
 ---
 
@@ -116,7 +125,7 @@ cn-trip 帮我规划去云南
 
 | 方面 | Codex | Claude Code |
 |------|-------|-------------|
-| 触发方式 | `$cn-trip` 前缀 | 自然语言描述需求 |
-| 元数据 | `agents/openai.yaml` | `CLAUDE.md` |
+| 触发方式 | 自然语言 / `AGENTS.md` / skill 自动发现 | 自然语言 / hooks |
+| 元数据 | `AGENTS.md` + `.agents/skills/cn-trip/SKILL.md` | `CLAUDE.md` + `.claude/settings.json` |
 | 工具调用 | Codex 内置机制 | `Bash` / `WebFetch` / `WebSearch` |
-| Skill 安装 | 放入 skill 目录 | 项目内直接使用 |
+| Skill 安装 | 项目内自动发现 | 项目内直接使用 |
