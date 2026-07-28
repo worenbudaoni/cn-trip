@@ -26,7 +26,7 @@
 
 ## 项目定位
 
-`cn-trip` 是一套面向中国境内自由行的结构化旅行规划规范。
+`cn-trip` 既是一套**旅行规划规范**，也是一个**即下载即用的 Skill 包**——无论你用 Claude Code 还是 Codex CLI，克隆后进入目录即可使用，无需任何配置。
 
 它既可以作为 **Codex Skill** 直接使用，也可以作为 **Claude 或其他 Agent 框架** 的规划规则复用。它关注的不是“生成一段旅游文案”，而是将旅行需求转化为一份**可执行、可审核、可导出**的结构化方案。
 
@@ -152,10 +152,12 @@
 
 | 文件 | 适配平台 | 用途 |
 |------|---------|------|
-| `CLAUDE.md` | **Claude Code** | Claude Code 项目指令与工作流映射 |
+| `.claude/settings.json` | **Claude Code** | Hook 配置：SessionStart 自动加载 + `cn-trip` 前缀触发 |
+| `CLAUDE.md` | **Claude Code** | 项目指令与工作流映射 |
 | `AGENTS.md` | **通用 Agent 框架** | Claude API、Anthropic SDK、GPTs、LangChain 等集成参考 |
-| `SKILL.md` | Codex / 通用 | Skill 主入口，定义流程规则 |
-| `agents/openai.yaml` | **Codex / OpenAI** | Codex 风格元数据 |
+| `SKILL.md` | **全部平台** | 核心流程与约束规则 |
+| `.agents/skills/cn-trip/SKILL.md` | **Codex CLI** | Skill 自动发现入口 |
+| `scripts/generate-excel.js` | **全部平台** | Node.js Excel 生成器（自动安装依赖） |
 | `references/excel-layout.md` | **全部平台** | Excel 输出结构与校验契约 |
 
 因此需要理解两层：
@@ -165,40 +167,54 @@
 
 ## 快速开始
 
-### 在 Codex 中使用
-
-将目录放入本地 skill 目录：
-
-```text
-~/.codex/skills/cn-trip
-```
-
-示例：
-
-```text
-用 $cn-trip 帮我规划一个国内自由行
-```
-
-```text
-我想 8 月从上海出发去西藏玩 8 天，单人预算 5000，$cn-trip
-```
+**克隆项目，进入目录，直接使用。** 无需手动安装或复制任何文件。
 
 ### 在 Claude Code 中使用
 
-本仓库的 `CLAUDE.md` 已提供完整的项目指令配置。克隆或下载项目后，在仓库目录下直接运行 Claude Code 即可：
-
-```text
+```bash
+git clone <repo-url>
 cd cn-trip
 claude
 ```
 
-然后在对话中自然描述需求：
+进入项目后直接自然语言描述需求即可（hook 会自动加载规划流程）：
 
 ```text
 帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
 ```
 
-Claude 会自动读取 `CLAUDE.md` 中的指令，进而调用 `SKILL.md` 和 `references/excel-layout.md` 执行规划。
+也可以在非旅行对话中主动触发：
+
+```text
+cn-trip 帮我规划去云南
+```
+
+自动生效的机制：
+- `.claude/settings.json` hooks → SessionStart 自动注入上下文 + `cn-trip` 前缀触发
+
+### 在 Codex CLI 中使用
+
+```bash
+git clone <repo-url>
+cd cn-trip
+codex
+```
+
+Codex 会自动加载项目配置，直接描述需求：
+
+```text
+帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
+```
+
+也可用 skill 命令显式触发：
+
+```text
+/cn-trip 帮我规划去云南
+```
+
+自动生效的机制：
+- `AGENTS.md` → Codex 启动时自动读取
+- `.agents/skills/cn-trip/SKILL.md` → Codex 自动发现，支持 `/cn-trip` 触发
 
 ### 在 Claude API / Anthropic SDK 中使用
 
@@ -218,18 +234,32 @@ Claude 会自动读取 `CLAUDE.md` 中的指令，进而调用 `SKILL.md` 和 `r
 
 ```text
 cn-trip/
-├── CLAUDE.md                    # Claude Code 项目指令
-├── AGENTS.md                    # 通用 Agent 框架适配说明
-├── SKILL.md                     # Skill 主入口（Codex / 通用）
+├── .claude/
+│   └── settings.json              # Claude Code hook 配置（SessionStart + cn-trip 前缀）
+├── .agents/
+│   └── skills/
+│       └── cn-trip/
+│           └── SKILL.md            # Codex CLI skill 入口（自动发现）
+├── CLAUDE.md                       # Claude Code 项目指令
+├── AGENTS.md                       # 通用 Agent 框架适配说明
+├── SKILL.md                        # 核心流程与约束规则（全部平台共用）
 ├── README.md
 ├── LICENSE
+├── scripts/
+│   └── generate-excel.js           # Node.js Excel 生成器（自动安装依赖）
 ├── agents/
-│   └── openai.yaml              # Codex / OpenAI 风格元数据
+│   └── openai.yaml                 # Codex / OpenAI 风格元数据
 └── references/
-    └── excel-layout.md           # Excel 输出结构定义
+    └── excel-layout.md             # Excel 输出结构定义
 ```
 
 文件说明：
+
+- `.claude/settings.json`
+  Claude Code hook 配置。SessionStart 自动注入 cn-trip 上下文，BeforeCommand 支持 `cn-trip` 前缀触发
+
+- `.agents/skills/cn-trip/SKILL.md`
+  Codex CLI skill 入口。放入 `.agents/skills/` 下后 Codex 会自动发现，用户可用 `/cn-trip` 触发
 
 - `CLAUDE.md`
   Claude Code 项目指令，定义工作流映射与工具使用方式
@@ -238,7 +268,10 @@ cn-trip/
   通用 Agent 框架适配说明，帮助 Claude API、Anthropic SDK、GPTs、LangChain 等集成本规范
 
 - `SKILL.md`
-  Skill 主入口，定义触发场景、规划流程和约束规则
+  核心流程，定义触发场景、规划流程、预算逻辑、输出规范和 Excel 导出规则
+
+- `scripts/generate-excel.js`
+  Node.js Excel 生成器。生成 8-sheet `.xlsx`，自动安装 `exceljs` 依赖，不需 Python
 
 - `references/excel-layout.md`
   Excel 输出结构、导出模式和校验约定
@@ -259,20 +292,21 @@ cn-trip/
 
 ## 关于 Excel 导出
 
-本仓库定义的是 **Excel 输出契约**，不等于天然内置一个跨平台导出程序。
+本仓库同时提供了 **Excel 输出契约** 和 **Node.js 生成器**：
 
-更合理的落地方式是分层：
+- `references/excel-layout.md` → 8 个 sheet 的列定义与校验标准
+- `scripts/generate-excel.js` → 把结构化 JSON 生成为 `.xlsx` 的实际引擎
 
-### 规划层
+生成器基于 Node.js + `exceljs`，会自动安装依赖。Claude Code 和 Codex CLI 都使用 `node scripts/generate-excel.js` 调用。
 
-由 `cn-trip` 负责：
+### 导出流程
 
-- 问诊
-- 目的地推荐
-- 预算拆分
-- 行程生成
-- 美食 / 文化信息整理
-- Excel 结构组织
+```text
+1. AI 完成规划，冻结结构化数据
+2. 写入临时 JSON 文件
+3. 执行 node scripts/generate-excel.js --input plan.json --output 方案.xlsx
+4. 验证中文完整性，报告保存路径
+```
 
 ## License
 

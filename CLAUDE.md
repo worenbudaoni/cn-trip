@@ -6,15 +6,24 @@
 
 ## 快速开始
 
-在 Claude Code 中直接以自然语言描述需求即可：
+克隆项目后直接进入目录运行 Claude Code：
+
+```bash
+cd cn-trip
+claude
+```
+
+在对话中自然语言描述需求即可（hooks 自动加载规划流程）：
 
 ```
 帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
 ```
 
-Claude 会自动读取 `SKILL.md` 和 `references/excel-layout.md` 中的规则来执行规划流程。
+也可以显式触发：
 
-你可以随时使用 `!` 执行 shell 命令来创建文件（如生成 Excel）。
+```
+cn-trip 帮我规划去云南
+```
 
 ---
 
@@ -22,7 +31,9 @@ Claude 会自动读取 `SKILL.md` 和 `references/excel-layout.md` 中的规则�
 
 | 文件 | 用途 |
 |------|------|
+| `.claude/settings.json` | **Hook 配置** — SessionStart 自动加载 + `cn-trip` 前缀触发 |
 | `SKILL.md` | **核心流程** — 触发场景、规划流程、约束规则、输出规范 |
+| `scripts/generate-excel.js` | **Excel 生成器** — Node.js 脚本，自动安装依赖 |
 | `references/excel-layout.md` | **Excel 输出契约** — 8 个 sheet 结构、导出模式、校验清单 |
 | `CLAUDE.md` | Claude Code 项目指令（本文件） |
 | `AGENTS.md` | 通用 Agent 框架适配说明 |
