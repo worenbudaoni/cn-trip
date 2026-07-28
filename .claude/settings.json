@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": {
+      "cn-trip": "项目 cn-trip 已加载。用户可能会请你规划国内自由行，请参照 CLAUDE.md、SKILL.md 和 references/excel-layout.md 中的流程执行。在用户明确提到旅行相关需求之前，不要主动触发规划流程。"
+    },
+    "BeforeCommand": {
+      "cn-trip": "请以 cn-trip 规划流程帮我处理：{{input}}"
+    }
+  }
+}
