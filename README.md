@@ -1,97 +1,99 @@
 # cn-trip
 
-Structured China domestic trip planning for AI agents.
+一个面向中国境内自由行场景的结构化旅行规划 Skill / Agent Spec。
 
-`cn-trip` is a reusable planning spec for China domestic free-travel workflows. It can be used as:
+`cn-trip` 的目标不是让 AI “推荐几个地方”，而是让 AI 能够围绕用户的时间、预算、出发地、同行人、自驾意愿与出行偏好，输出一份**可执行、可修改、可导出的旅行方案**。
 
-- a Codex skill out of the box
-- a prompt/workflow asset for Claude or other agent frameworks
-- a planning layer in front of a separate Excel exporter
+它既可以作为 **Codex Skill** 直接使用，也可以作为 **Claude 或其他 Agent 框架** 的通用规划规范复用。
 
-It is designed to turn vague travel requests into structured, reviewable trip plans with budget logic, transport references, food recommendations, cultural context, and spreadsheet-ready output rules.
+[English](./README.en.md) · [Skill 入口](./SKILL.md) · [Excel 结构定义](./references/excel-layout.md)
 
-## Highlights
+---
 
-- China domestic free-travel focused
-- Step-by-step intake instead of one-shot generic itinerary generation
-- Main plan and backup plan by default
-- Per-person budget driven planning
-- Transport-aware output with train / flight references
-- Food recommendations at shop level with location cues
-- Historical and cultural context for major stops
-- Structured multi-sheet Excel output contract
-- Works as a general planning spec across Windows, Linux, CentOS, and macOS
+## 项目特点
 
-## Compatibility
+和普通“旅游推荐提示词”相比，`cn-trip` 更强调规划过程、预算约束和结果结构。
 
-### Agent compatibility
+| 维度 | 普通 AI 回答 | 使用 `cn-trip` |
+| --- | --- | --- |
+| 目的地建议 | 给出若干景点或城市名单 | 结合预算、天数、出发地、偏好输出候选目的地 |
+| 行程规划 | 偏泛化描述 | 输出主方案 + 备用方案 |
+| 预算处理 | 只给粗略总价 | 先做单人预算拆分，再校验方案可行性 |
+| 美食推荐 | 罗列热门餐厅 | 给出店铺级推荐、位置、推荐菜和行程联动 |
+| 交通信息 | 模糊说“坐高铁/飞机” | 尽量给车次 / 航班参考、时长与费用区间 |
+| 文化信息 | 基本缺失 | 补充景点历史人文背景 |
+| 输出形式 | 一段长文本 | 面向多 sheet Excel 的结构化输出 |
 
-Core planning logic is platform-agnostic.
+---
 
-It can be reused in:
+## 适用范围
 
-- Codex
-- Claude
-- other agent systems that support prompt rules, tool use, or workflow orchestration
+### 适合的场景
 
-Current repository packaging is strongest for Codex-style skill loading because it includes:
+- 还没决定去哪，想先做目的地筛选
+- 已经有目的地，想生成完整自由行方案
+- 想同时拿到主方案和备用方案
+- 想把预算拆到交通、酒店、门票、餐饮等具体安排
+- 想把结果整理成表格或 Excel
 
-- `SKILL.md`
-- `agents/openai.yaml`
-- `references/excel-layout.md`
+### 当前边界
 
-Other agents can still use the same planning rules, but may need their own adapter layer.
+- 只做中国境内自由行
+- 不做出境游
+- 不负责机酒预订
+- 不承诺实时导航
+- 不把社媒经验直接当成确定事实
 
-### OS compatibility
+---
 
-The planning specification itself is cross-platform:
+## 核心能力
 
-- Windows
-- Linux
-- CentOS
-- macOS
+### 1. 约束问诊
 
-What varies by environment is not the planning logic, but the local `.xlsx` export implementation. If a stable exporter is attached, the same planning rules can be used across all major desktop/server environments.
+按步骤收集旅行关键信息，而不是一次性让用户填长表单。
 
-## What This Project Does
+重点字段包括：
 
-`cn-trip` covers the planning side of a trip workflow:
+- 是否已有目的地
+- 出发地
+- 出行日期
+- 行程天数
+- 单人预算
+- 同行人类型
+- 是否考虑自驾
+- 返程约束
 
-1. Collect constraints through guided questions
-2. Recommend or validate destinations
-3. Build a per-person budget split before finalizing the route
-4. Gather high-trust and experience-based sources
-5. Produce a balanced main plan and a backup option
-6. Organize the result into a spreadsheet-ready structure
+### 2. 目的地推荐与校验
 
-It is intended for use cases such as:
+- 对未定目的地用户：给出候选地并解释推荐原因
+- 对已有目的地用户：围绕既定目标规划，必要时指出明显不匹配点
 
-- undecided destination selection
-- destination-specific itinerary generation
-- route comparison
-- cost-sensitive planning
-- spreadsheet-based travel planning output
+### 3. 预算优先的规划逻辑
 
-## Scope
+`cn-trip` 不把预算当附录，而是把预算作为规划前置条件。
 
-Current scope:
+主要原则：
 
-- China domestic free travel
-- itinerary planning
-- food and cultural recommendations
-- source-aware planning
-- Excel-oriented structured output
+- 先按单人预算拆分
+- 再判断路线、天数、交通方式是否可行
+- 若预算不足，明确指出冲突来源并给出更便宜的备选方案
 
-Out of scope:
+### 4. 主方案 + 备用方案
 
-- outbound travel
-- visa handling
-- direct hotel or flight booking
-- guaranteed real-time navigation
+默认生成两套方案：
 
-## Output Model
+- 主方案：均衡、可执行
+- 备用方案：更省钱或更轻松
 
-The default workbook model contains 8 sheets:
+### 5. 结构化输出
+
+输出面向后续表格化和 Excel 导出，而不是只给一段阅读型文本。
+
+---
+
+## Excel 输出模型
+
+默认采用 8 个 sheet：
 
 1. `行程总览`
 2. `详细行程（主方案）`
@@ -102,96 +104,182 @@ The default workbook model contains 8 sheets:
 7. `景点历史人文`
 8. `信息来源`
 
-The model is intentionally structured for editing, not just reading.
+### 结构特点
 
-Key behaviors:
+- `行程总览`：展示出发地、目的地、日期、返程计划、预算与亮点
+- `详细行程`：细到每天/时段，并可挂接交通、酒店、门票、餐饮费用参考
+- `预算拆分`：尽量回指具体安排，例如 `D1 去程高铁`、`D1 入住酒店`
+- `美食攻略`：要求给到店铺名称、位置、推荐菜、人均、避坑点
+- `景点历史人文`：补充重要景点的历史与文化背景
+- `信息来源`：集中保存来源与核验状态，避免到处重复长链接
 
-- food guidance is shop-based, not just dish-based
-- itinerary rows can point to recommended shops
-- budget can be pushed down to itinerary-level line items
-- transport references should be auditable through the source sheet
+---
 
-## Repository Layout
+## 兼容性
+
+### Agent / Skill 兼容性
+
+`cn-trip` 的**规划逻辑**是通用的，可用于：
+
+- Codex
+- Claude
+- 其他支持 Prompt / Tool / Workflow 的 Agent 系统
+
+当前仓库同时提供了一套 **Codex 风格适配封装**：
+
+- `SKILL.md`
+- `agents/openai.yaml`
+- `references/excel-layout.md`
+
+这意味着：
+
+- 作为方法论和规划规范，它是通用的
+- 作为“安装即用”的 Skill 包，目前优先适配 Codex 类机制
+- 其他平台复用时，通常需要各自的 adapter
+
+### 操作系统兼容性
+
+规划规范本身可在以下环境中复用：
+
+- Windows
+- Linux
+- CentOS
+- macOS
+
+需要区分的是：
+
+- **规划层**：跨平台
+- **本地 Excel 导出层**：取决于是否接入稳定导出器
+
+也就是说，仓库中的 Markdown 规则天然跨平台；真正的 `.xlsx` 自动生成是否稳定，取决于你的本地导出实现，而不是本仓库本身。
+
+---
+
+## 快速开始
+
+### 在 Codex 中使用
+
+将目录放入本地 skill 目录：
+
+```text
+~/.codex/skills/cn-trip
+```
+
+示例：
+
+```text
+用 $cn-trip 帮我规划一个国内自由行
+```
+
+```text
+我想 8 月从上海出发去西藏玩 8 天，单人预算 5000，$cn-trip
+```
+
+### 在 Claude 或其他 Agent 中使用
+
+建议把以下两个文件作为核心输入：
+
+- `SKILL.md`
+- `references/excel-layout.md`
+
+说明：
+
+- `SKILL.md` 定义规划流程和回答规则
+- `excel-layout.md` 定义输出结构和导出校验契约
+- `agents/openai.yaml` 属于 Codex / OpenAI 风格元数据，不保证其他平台直接识别
+
+---
+
+## 仓库结构
 
 ```text
 cn-trip/
 ├── SKILL.md
 ├── README.md
+├── README.en.md
+├── LICENSE
 ├── agents/
 │   └── openai.yaml
 └── references/
     └── excel-layout.md
 ```
 
-File responsibilities:
+### 文件说明
 
 - `SKILL.md`
-  Main planning workflow and operational rules
-- `agents/openai.yaml`
-  Codex/OpenAI-style metadata
+  Skill 主入口，定义触发场景、规划流程和约束规则
+
 - `references/excel-layout.md`
-  Workbook structure, export modes, and validation rules
+  Excel 输出结构、导出模式和校验约定
 
-## Quick Start
+- `agents/openai.yaml`
+  Codex / OpenAI 风格的 skill 元数据
 
-### Use with Codex
+- `README.md`
+  中文主文档
 
-Place the folder under your local skill directory:
+- `README.en.md`
+  英文说明文档
 
-```text
-~/.codex/skills/cn-trip
-```
+---
 
-Example prompts:
+## 设计原则
 
-```text
-Use $cn-trip to plan a China domestic free-travel itinerary.
-```
+`cn-trip` 采用以下原则约束规划过程：
 
-```text
-I want an 8-day Tibet trip from Shanghai in August, budget 5000 per person. Use $cn-trip.
-```
+1. 先问清，再推荐  
+2. 先算预算，再润色路线  
+3. 先冻结结构化结果，再导出文件  
+4. 经验来源与事实来源分级使用  
+5. 输出必须可修改，而不是只可阅读  
+6. 优先稳定导出路径，避免脆弱链路反复重试  
 
-### Use with Claude or other agents
+---
 
-Use:
+## 关于 Excel 导出
 
-- `SKILL.md` as the primary workflow spec
-- `references/excel-layout.md` as the spreadsheet/output contract
+本仓库定义的是 **Excel 输出契约**，不等于天然内置一个跨平台导出程序。
 
-Do not assume other platforms will consume `agents/openai.yaml` directly.
+更合理的落地方式是分层：
 
-## Excel Export Positioning
+### 规划层
 
-This repository defines a stable Excel output contract. It does not, by itself, guarantee a bundled cross-platform exporter.
+由 `cn-trip` 负责：
 
-In practice, treat the system as two layers:
+- 问诊
+- 目的地推荐
+- 预算拆分
+- 行程生成
+- 美食 / 文化信息整理
+- Excel 结构组织
 
-1. Planning layer
-   `cn-trip` defines the planning logic and spreadsheet structure
-2. Export layer
-   a local exporter, controlled script, or platform-specific tool writes the actual `.xlsx`
+### 导出层
 
-This separation is deliberate. It keeps the planning workflow reusable even when the export runtime differs across environments.
+由本地导出器、脚本或受控程序负责：
 
-## Design Principles
+- 生成真实 `.xlsx`
+- 校验 sheet 名和中文文本完整性
+- 保存到指定路径
 
-- Ask before assuming
-- Budget before polishing
-- Use sources with clear trust boundaries
-- Freeze structured output before export
-- Keep spreadsheet output editable
-- Prefer reliable export paths over clever but brittle ones
+这样做的好处是：
 
-## Recommended Extensions
+- 规划逻辑可复用
+- 平台差异被隔离
+- 导出问题不会污染规划流程
 
-If you want to turn this into a broader multi-agent package, the next useful additions are:
+---
 
-- a Claude-specific adapter
-- a general JSON schema for plan payloads
-- a cross-platform Excel exporter
-- install scripts for different agent ecosystems
+## 后续扩展方向
+
+如果你想把它进一步做成多平台可复用的完整项目，建议补充：
+
+- Claude 专用适配说明
+- 通用 JSON schema
+- 独立跨平台 Excel 导出器
+- 平台级安装与集成脚本
+
+---
 
 ## License
 
-See [LICENSE](LICENSE).
+See [LICENSE](./LICENSE).
