@@ -27,7 +27,7 @@
 |------|------|------|
 | `SKILL.md` | 规划流程、回答规则、预算逻辑、输出规范 | ✅ 必须 |
 | `references/excel-layout.md` | 8-sheet Excel 结构、导出模式、校验清单 | ✅ 必须 |
-| `CLAUDE.md` | Claude Code 专属适配 | ⬜ 仅 Claude |
+| `CLAUDE.md` | Claude Code 适配层，声明仍以 `SKILL.md` 为准 | ⬜ 仅 Claude |
 | `.agents/skills/cn-trip/SKILL.md` | Codex Skill 入口（自动发现） | ✅ Codex |
 | `AGENTS.md` | 本文档 — Agent 兼容总览 | ⬜ 参考 |
 

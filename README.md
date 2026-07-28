@@ -152,8 +152,8 @@
 
 | 文件 | 适配平台 | 用途 |
 |------|---------|------|
-| `.claude/settings.json` | **Claude Code** | Hook 配置：SessionStart 自动加载 + `cn-trip` 前缀触发 |
-| `CLAUDE.md` | **Claude Code** | 项目指令与工作流映射 |
+| `.claude/settings.json` | **Claude Code** | Hook 配置：把 `SKILL.md` 规则注入会话 |
+| `CLAUDE.md` | **Claude Code** | Claude 适配层，声明 `SKILL.md` 是唯一规则源 |
 | `AGENTS.md` | **通用 Agent 框架** | Claude API、Anthropic SDK、GPTs、LangChain 等集成参考 |
 | `SKILL.md` | **全部平台** | 核心流程与约束规则 |
 | `.agents/skills/cn-trip/SKILL.md` | **Codex CLI** | Skill 自动发现入口 |
@@ -204,9 +204,10 @@ cn-trip 帮我规划去云南
 
 生效机制：
 
-- `.claude/settings.json` 在会话启动时注入项目上下文
-- `CLAUDE.md` 说明 Claude Code 应如何执行这套流程
-- `SKILL.md` 和 `references/excel-layout.md` 提供规划与导出规则
+- `SKILL.md` 是 Claude 与 Codex 共用的规则源
+- `references/excel-layout.md` 是共用的 Excel 输出契约
+- `.claude/settings.json` 在会话启动时把这套 skill 规则注入 Claude
+- `CLAUDE.md` 只保留 Claude 专属适配说明，不再重复定义平行规则
 
 #### Codex CLI
 
@@ -290,13 +291,13 @@ cn-trip/
   Codex CLI skill 入口。放入 `.agents/skills/` 下后 Codex 会自动发现
 
 - `CLAUDE.md`
-  Claude Code 项目指令，定义工作流映射与工具使用方式
+  Claude Code 适配层。说明 Claude 如何加载并执行根目录 `SKILL.md`
 
 - `AGENTS.md`
   通用 Agent 框架适配说明，帮助 Claude API、Anthropic SDK、GPTs、LangChain 等集成本规范
 
 - `SKILL.md`
-  核心流程，定义触发场景、规划流程、预算逻辑、输出规范和 Excel 导出规则
+  核心流程与唯一规则源，定义触发场景、规划流程、预算逻辑、输出规范和 Excel 导出规则
 
 - `scripts/generate-excel.js`
   Node.js Excel 生成器。生成 8-sheet `.xlsx`，自动安装 `exceljs` 依赖，不需 Python

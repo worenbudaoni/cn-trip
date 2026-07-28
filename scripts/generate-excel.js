@@ -91,20 +91,104 @@ function autoColWidths(sheet, minWidth = 8, maxWidth = 40) {
   });
 }
 
+function estimateWrappedLineCount(text, width) {
+  if (!text) return 1;
+  const lines = String(text).split(/\r?\n/);
+  return lines.reduce((count, line) => {
+    const effectiveWidth = Math.max(1, Math.floor(width || 12));
+    return count + Math.max(1, Math.ceil(line.length / effectiveWidth));
+  }, 0);
+}
+
+function autoRowHeights(sheet, options = {}) {
+  const {
+    minHeight = 20,
+    maxHeight = 160,
+    headerHeight = 24,
+    perLineHeight = 18
+  } = options;
+
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) {
+      row.height = headerHeight;
+      return;
+    }
+
+    let maxLines = 1;
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      const columnWidth = sheet.getColumn(colNumber).width || 12;
+      const lineCount = estimateWrappedLineCount(cell.value, columnWidth - 2);
+      if (lineCount > maxLines) {
+        maxLines = lineCount;
+      }
+    });
+
+    row.height = Math.min(maxHeight, Math.max(minHeight, maxLines * perLineHeight));
+  });
+}
+
+function finalizeSheetLayout(sheet, options = {}) {
+  autoColWidths(sheet, options.minWidth, options.maxWidth);
+  autoRowHeights(sheet, options);
+}
+
+function pickFirst(...values) {
+  return values.find(value => value !== undefined && value !== null && value !== '');
+}
+
+function normalizeOverviewRows(data) {
+  if (Array.isArray(data.overview)) {
+    return data.overview;
+  }
+
+  if (Array.isArray(data.overviews)) {
+    return data.overviews;
+  }
+
+  if (data.overview && (data.overview.main || data.overview.backup)) {
+    return [data.overview.main, data.overview.backup].filter(Boolean);
+  }
+
+  const rows = [];
+  if (data.mainOverview) {
+    rows.push({
+      方案: pickFirst(data.mainOverview.方案, '主方案'),
+      ...data.mainOverview
+    });
+  }
+  if (data.backupOverview) {
+    rows.push({
+      方案: pickFirst(data.backupOverview.方案, '备用方案'),
+      ...data.backupOverview
+    });
+  }
+  if (rows.length > 0) {
+    return rows;
+  }
+
+  if (data.overview && typeof data.overview === 'object') {
+    return [data.overview];
+  }
+
+  return [];
+}
+
 // ─── Sheet 生成器 ─────────────────────────────────────────────────────────────
 
 function buildSheet1行程总览(wb, data) {
   const sheet = wb.addWorksheet('行程总览');
   sheetDefaults(sheet);
-  const d = data.overview || {};
+  const overviewRows = normalizeOverviewRows(data);
   headerRow(sheet, null, ['方案', '出发地', '目的地', '出行日期', '天数', '返程计划',
     '同行人', '单人预算档位', '是否建议自驾', '单人预算估算', '预估总预算',
     '交通参考', '核心亮点', '关键避坑点']);
-  dataRow(sheet, [d.方案 || '', d.出发地 || '', d.目的地 || '', d.出行日期 || '',
-    d.天数 || '', d.返程计划 || '', d.同行人 || '', d.单人预算档位 || '',
-    d.是否建议自驾 || '', d.单人预算估算 || '', d.预估总预算 || '',
-    d.交通参考 || '', d.核心亮点 || '', d.关键避坑点 || '']);
-  autoColWidths(sheet);
+  overviewRows.forEach(row => dataRow(sheet, [
+    row.方案 || '', row.出发地 || '', row.目的地 || '', row.出行日期 || '',
+    row.天数 || '', row.返程计划 || '', row.同行人 || '', row.单人预算档位 || '',
+    row.是否建议自驾 || '', row.单人预算估算 || '', row.预估总预算 || '',
+    row.交通参考 || '', row.核心亮点 || '', row.关键避坑点 || ''
+  ]));
+  finalizeSheetLayout(sheet, { minWidth: 10, maxWidth: 48, maxHeight: 120 });
 }
 
 function buildSheet详细行程(wb, name, planData) {
@@ -121,7 +205,7 @@ function buildSheet详细行程(wb, name, planData) {
     row.餐饮店铺推荐 || '', row.餐饮费用参考 || '',
     row.返程衔接 || '', row.是否适合自驾 || '', row.餐饮建议 || '', row.备注 || ''
   ]));
-  autoColWidths(sheet);
+  finalizeSheetLayout(sheet, { minWidth: 10, maxWidth: 56, maxHeight: 220 });
 }
 
 function buildSheet4预算拆分(wb, data) {
@@ -134,7 +218,7 @@ function buildSheet4预算拆分(wb, data) {
     row.关联安排 || '', row.费用类别 || '',
     row.节省估算 || '', row.均衡估算 || '', row.舒适估算 || '', row.说明 || ''
   ]));
-  autoColWidths(sheet);
+  finalizeSheetLayout(sheet, { minWidth: 10, maxWidth: 48, maxHeight: 180 });
 }
 
 function buildSheet5出行准备清单(wb, data) {
@@ -145,7 +229,7 @@ function buildSheet5出行准备清单(wb, data) {
     row.类别 || '', row['物品/事项'] || row.物品事项 || '',
     row.是否必需 || '', row.适用原因 || '', row.备注 || ''
   ]));
-  autoColWidths(sheet);
+  finalizeSheetLayout(sheet, { minWidth: 10, maxWidth: 48, maxHeight: 180 });
 }
 
 function buildSheet6美食攻略(wb, data) {
@@ -159,7 +243,7 @@ function buildSheet6美食攻略(wb, data) {
     row['推荐菜/吃法'] || row.推荐菜吃法 || '', row.适合时段 || '',
     row.人均参考 || '', row.避坑点 || '', row.来源依据 || ''
   ]));
-  autoColWidths(sheet);
+  finalizeSheetLayout(sheet, { minWidth: 10, maxWidth: 56, maxHeight: 220 });
 }
 
 function buildSheet7景点历史人文(wb, data) {
@@ -172,7 +256,7 @@ function buildSheet7景点历史人文(wb, data) {
     row.背景简介 || '', row.推荐看点 || '', row.建议停留时长 || '',
     row.适合人群 || '', row.备注 || '', row.来源依据 || ''
   ]));
-  autoColWidths(sheet);
+  finalizeSheetLayout(sheet, { minWidth: 10, maxWidth: 56, maxHeight: 220 });
 }
 
 function buildSheet8信息来源(wb, data) {
@@ -185,7 +269,7 @@ function buildSheet8信息来源(wb, data) {
     row.来源名称 || '', row.来源链接 || '',
     row.来源级别 || '', row.核验状态 || '', row.备注 || ''
   ]));
-  autoColWidths(sheet);
+  finalizeSheetLayout(sheet, { minWidth: 10, maxWidth: 56, maxHeight: 220 });
 }
 
 function ensureOutputDirectory(filePath) {
