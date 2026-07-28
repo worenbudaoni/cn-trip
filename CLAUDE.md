@@ -54,7 +54,7 @@ Claude 会自动读取 `SKILL.md` 和 `references/excel-layout.md` 中的规则�
 `cn-trip` 的一些需求对应 Claude Code 的内置工具：
 
 - **Web 信息收集** → 使用 `WebFetch` 或 `WebSearch` 获取景点、交通、美食信息
-- **Excel 生成** → 使用 `Bash`（shell）调用 Python 或其他脚本生成 `.xlsx`
+- **Excel 生成** → 使用 `Bash`（shell）执行 `node scripts/generate-excel.js` 生成 `.xlsx`
 - **文件读写** → 使用 `Write` / `Read` 处理文件
 
 ---
@@ -80,7 +80,8 @@ Claude 会自动读取 `SKILL.md` 和 `references/excel-layout.md` 中的规则�
 
 ## Excel 导出注意事项
 
-- Claude Code 通过 `Bash` 工具执行脚本来生成 `.xlsx` 文件
+- Claude Code 通过 `Bash` 工具执行 `node scripts/generate-excel.js` 来生成 `.xlsx` 文件
+- 脚本会自动安装 `exceljs` 依赖，无需手动 `npm install`
 - 默认导出到桌面，保存路径会报告给用户
 - 文件名格式：`出发日期_目的地_天数_旅行方案.xlsx`
 - 导出后应验证文件完整性（中文内容不出现 `?` 乱码）

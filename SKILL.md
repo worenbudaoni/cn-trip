@@ -254,9 +254,28 @@ Read [references/excel-layout.md](references/excel-layout.md) before building th
 
 Export only after the user confirms the preview.
 
-Default to `standard export`. Only use `detailed export` when the user asks for extra depth.
+### Export Engine
 
-Use these modes:
+**Prefer Node.js (`scripts/generate-excel.js`) over Python/openpyxl.** Both Claude Code and Codex have Node.js available. The script auto-installs `exceljs` if missing — no manual setup needed.
+
+Usage:
+
+```bash
+# 先把结构化数据写入临时 JSON 文件，再调用脚本
+echo '<JSON>' > temp_plan.json
+node scripts/generate-excel.js --input temp_plan.json --output 出发日期_目的地_天数_旅行方案.xlsx
+```
+
+The script accepts:
+- `--input <file>` — read plan JSON from file
+- `--output <path>` — output .xlsx path
+- `--stdin` — read plan JSON from stdin
+
+Only fall back to Python/openpyxl when the environment has no Node.js.
+
+### Modes
+
+Default to `standard export`. Only use `detailed export` when the user asks for extra depth.
 
 - `standard export`: default, optimized for speed and reliability
 - `detailed export`: richer notes and more reference rows, slower
@@ -287,7 +306,6 @@ Preserve Chinese text exactly in the workbook. If sheet names, headers, or cell 
 Treat Excel export as an engineering task, not just a formatting step. Follow these constraints:
 
 - Do not claim success until the workbook is structurally and textually validated.
-- Prefer generating a standards-compliant `.xlsx` package directly when the environment lacks a reliable Excel library.
 - Do not depend on Excel COM automation as the primary path.
 - Do not depend on `openpyxl` being installed.
 - If the runtime has trouble creating a Chinese file name directly, write to an ASCII temporary name first, then rename it to the final Chinese file name using a Unicode-safe filesystem operation.
