@@ -20,6 +20,7 @@ Follow this sequence:
 7. Show a short structured preview.
 8. Revise if needed.
 9. Generate the Excel file only after explicit user confirmation.
+10. Validate export readability before claiming success, especially long-text cells, row heights, and wrapped content.
 
 Do not skip to full output before the preview is confirmed.
 
@@ -311,6 +312,13 @@ Treat Excel export as an engineering task, not just a formatting step. Follow th
 - If the runtime has trouble creating a Chinese file name directly, write to an ASCII temporary name first, then rename it to the final Chinese file name using a Unicode-safe filesystem operation.
 - After writing the workbook, inspect the resulting `.xlsx` contents. Verify that workbook sheet names, headers, and representative body cells preserve Chinese characters and do not degrade into `?` or `????`.
 - If validation fails, regenerate before reporting completion.
+
+After writing the workbook, also validate presentation integrity for long text:
+
+- cells with long itinerary notes, food recommendations, source notes, or remarks must use wrapped text
+- rows with long wrapped text must have sufficient height so the visible content is not clipped
+- if a row is still visually likely to be truncated, adjust row height or column width before reporting success
+- do not treat a workbook with hidden long-text content as a successful export
 
 Optimize export for reliability and speed:
 

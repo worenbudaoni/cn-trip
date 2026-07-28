@@ -267,6 +267,12 @@ Write a real `.xlsx` workbook with intact Unicode text.
 
 If the workbook contains garbled Chinese such as `?` or `????` in sheet names, headers, or content, consider the export failed and regenerate it before presenting success.
 
+Long-text presentation is part of export integrity:
+
+- long cells must use wrapped text instead of overflowing visually
+- rows containing long notes, remarks, food recommendations, or source explanations must be tall enough to show the wrapped content
+- do not leave itinerary or note cells visually clipped just because the raw text exists in the cell
+
 ## Save Flow
 
 Use numbered options for export and location confirmation whenever possible.
@@ -295,6 +301,7 @@ Before reporting success, verify all of the following:
 - `xl/workbook.xml` keeps Chinese sheet names intact.
 - Worksheet headers keep Chinese text intact.
 - Representative body cells keep Chinese text intact.
+- Representative long-text rows are not visually clipped by insufficient row height.
 - The final file name matches `出发日期_目的地_天数_旅行方案.xlsx`.
 - The final save path is reported back to the user.
 - The workbook contains all 8 expected sheets with the exact intended names.
