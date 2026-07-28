@@ -1,0 +1,4 @@
+interface:
+  display_name: "CN Trip"
+  short_description: "Plan domestic trips and export Excel itineraries"
+  default_prompt: "Use $cn-trip to plan a China domestic free-travel itinerary and export it to Excel."
