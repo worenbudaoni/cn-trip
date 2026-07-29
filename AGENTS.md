@@ -102,8 +102,8 @@ node scripts/generate-excel.js --input <plan.json> --output <output.xlsx>
 
 | 特性 | Claude Code | API / SDK | Codex | 其他 Agent |
 |------|------------|-----------|-------|-----------|
-| 触发方式 | 自然语言 / hooks | System prompt | `AGENTS.md` 自动加载 / skill 发现 | 自定义 |
-| 元数据 | `.claude/settings.json` | 手动配置 | `.agents/skills/cn-trip/SKILL.md` | 自适配 |
+| 触发方式 | `/cn-trip` 命令 | System prompt | `AGENTS.md` 自动加载 / skill 发现 | 自定义 |
+| 元数据 | `.claude/commands/cn-trip.md` | 手动配置 | `.agents/skills/cn-trip/SKILL.md` | 自适配 |
 | 工具调用 | Bash/WebFetch | Tool Use / Function Calling | Codex 内置 | 平台相关 |
 | Excel 生成 | `node scripts/generate-excel.js` | 自定义工具 | `node scripts/generate-excel.js` | 平台相关 |
 

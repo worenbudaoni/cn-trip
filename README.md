@@ -8,8 +8,6 @@
     生成一份可执行、可修改、可导出的旅行方案。
   </p>
   <p align="center">
-    <a href="https://github.com/worenbudaoni/cn-trip/stargazers"><img src="https://img.shields.io/github/stars/worenbudaoni/cn-trip?style=social" alt="GitHub Stars"></a>
-    <a href="https://github.com/worenbudaoni/cn-trip/forks"><img src="https://img.shields.io/github/forks/worenbudaoni/cn-trip?style=social" alt="GitHub Forks"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
     <a href="https://img.shields.io/badge/platform-Codex%20%7C%20Claude%20%7C%20Claude%20Code%20%7C%20Agent-blue"><img src="https://img.shields.io/badge/platform-Codex%20%7C%20Claude%20%7C%20Claude%20Code%20%7C%20Agent-blue" alt="Platform"></a>
   </p>
@@ -144,15 +142,15 @@
 
 `cn-trip` 的**规划逻辑**是通用的，可用于：
 
-- Codex
-- Claude
+- Claude Code（通过 `/cn-trip` 命令触发）
+- Codex CLI（自动发现 Skill）
 - 其他支持 Prompt / Tool / Workflow 的 Agent 系统
 
 当前仓库同时提供了各平台的适配封装：
 
 | 文件 | 适配平台 | 用途 |
 |------|---------|------|
-| `.claude/settings.json` | **Claude Code** | Hook 配置：把 `SKILL.md` 规则注入会话 |
+| `.claude/commands/cn-trip.md` | **Claude Code** | `/cn-trip` 斜杠命令触发 |
 | `CLAUDE.md` | **Claude Code** | Claude 适配层，声明 `SKILL.md` 是唯一规则源 |
 | `AGENTS.md` | **通用 Agent 框架** | Claude API、Anthropic SDK、GPTs、LangChain 等集成参考 |
 | `SKILL.md` | **全部平台** | 核心流程与约束规则 |
@@ -190,24 +188,18 @@ cd cn-trip
 claude
 ```
 
-进入会话后，直接用自然语言提出旅行需求：
+进入会话后，通过 `/cn-trip` 命令触发：
 
 ```text
-帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
-```
-
-也可以用显式前缀触发：
-
-```text
-cn-trip 帮我规划去云南
+/cn-trip 帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
 ```
 
 生效机制：
 
 - `SKILL.md` 是 Claude 与 Codex 共用的规则源
 - `references/excel-layout.md` 是共用的 Excel 输出契约
-- `.claude/settings.json` 在会话启动时把这套 skill 规则注入 Claude
-- `CLAUDE.md` 只保留 Claude 专属适配说明，不再重复定义平行规则
+- `.claude/commands/cn-trip.md` 定义了 `/cn-trip` 命令的触发内容
+- `CLAUDE.md` 说明何时执行这套 skill，不再重复定义平行规则
 
 #### Codex CLI
 
@@ -266,32 +258,33 @@ node scripts/generate-excel.js --input plan.json --output 出发日期_目的地
 ```text
 cn-trip/
 ├── .claude/
-│   └── settings.json              # Claude Code hook 配置（SessionStart + cn-trip 前缀）
+│   └── commands/
+│       └── cn-trip.md              # Claude Code `/cn-trip` 命令定义
 ├── .agents/
 │   └── skills/
 │       └── cn-trip/
 │           └── SKILL.md            # Codex CLI skill 入口（自动发现）
-├── CLAUDE.md                       # Claude Code 项目指令
 ├── AGENTS.md                       # 通用 Agent 框架适配说明
+├── CLAUDE.md                       # Claude Code 项目指令
 ├── SKILL.md                        # 核心流程与约束规则（全部平台共用）
 ├── README.md
 ├── LICENSE
 ├── scripts/
-│   └── generate-excel.js           # Node.js Excel 生成器（自动安装依赖）
+│   └── generate-excel.js           # Node.js Excel 生成器
 └── references/
     └── excel-layout.md             # Excel 输出结构定义
 ```
 
 文件说明：
 
-- `.claude/settings.json`
-  Claude Code hook 配置。SessionStart 自动注入 cn-trip 上下文，BeforeCommand 支持 `cn-trip` 前缀触发
+- `.claude/commands/cn-trip.md`
+  Claude Code 斜杠命令。用户在会话中输入 `/cn-trip` 后触发 cn-trip 规划流程
 
 - `.agents/skills/cn-trip/SKILL.md`
   Codex CLI skill 入口。放入 `.agents/skills/` 下后 Codex 会自动发现
 
 - `CLAUDE.md`
-  Claude Code 适配层。说明 Claude 如何加载并执行根目录 `SKILL.md`
+  Claude Code 适配层。说明 `/cn-trip` 何时触发，以及如何执行根目录 `SKILL.md`
 
 - `AGENTS.md`
   通用 Agent 框架适配说明，帮助 Claude API、Anthropic SDK、GPTs、LangChain 等集成本规范
@@ -300,10 +293,10 @@ cn-trip/
   核心流程与唯一规则源，定义触发场景、规划流程、预算逻辑、输出规范和 Excel 导出规则
 
 - `scripts/generate-excel.js`
-  Node.js Excel 生成器。生成 8-sheet `.xlsx`，自动安装 `exceljs` 依赖，不需 Python
+  Node.js Excel 生成器。生成 8-sheet `.xlsx`，自动安装 `exceljs` 依赖
 
 - `references/excel-layout.md`
-  Excel 输出结构、导出模式和校验约定
+  Excel 8-sheet 结构定义、导出模式和校验约定
 
 ## 设计原则
 
@@ -337,3 +330,9 @@ cn-trip/
 ## License
 
 [LICENSE](./LICENSE).
+
+---
+
+## 友情链接
+
+- [LINUX DO](https://linux.do/) —— 新的理想型社区，技术爱好者的聚集地。
