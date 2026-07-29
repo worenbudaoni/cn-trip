@@ -1,13 +1,13 @@
 # cn-trip — Claude Code 适配层
 
-`cn-trip` 在 Claude Code 中也应按 skill 的方式使用。
+`cn-trip` 按需触发，仅在用户输入 `/cn-trip` 时才执行。
 
 这里的约定是：
 
 - `SKILL.md` 是唯一规则源
 - `references/excel-layout.md` 是唯一 Excel 输出契约
-- `.claude/settings.json` 负责把这套 skill 规则注入 Claude 会话
-- `CLAUDE.md` 只负责说明 Claude Code 如何加载和执行这套 skill，不再重复定义一套平行流程
+- `.claude/commands/cn-trip.md` 是 `/cn-trip` 命令定义
+- `CLAUDE.md` 只负责说明这套规则，不再重复定义一套平行流程
 
 ---
 
@@ -37,23 +37,19 @@ cd cn-trip
 claude
 ```
 
-进入会话后直接提出旅行需求，例如：
+进入会话后通过 `/cn-trip` 命令触发：
 
 ```text
-帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
-```
-
-也可以显式触发：
-
-```text
-cn-trip 帮我规划去云南
+/cn-trip 帮我规划一个国内自由行，从上海出发去云南玩 7 天，单人预算 6000
 ```
 
 ---
 
-## Claude 必须如何执行这套 Skill
+## 何时执行这套 Skill
 
-当用户提出国内自由行需求时，Claude 必须严格按 `SKILL.md` 执行，至少包括：
+**仅当用户输入 `/cn-trip` 命令时**，Claude 才按 `SKILL.md` 执行。普通对话、代码修改、文件操作等都不触发。
+
+触发后必须遵守：
 
 - 先说明边界，只做国内自由行规划，不做预订和实时导航
 - 一步一步问，每次只推进一个决定
@@ -63,35 +59,18 @@ cn-trip 帮我规划去云南
 - 先给结构化预览，再等待确认
 - 预览未确认前，不要直接导出 Excel
 
-Claude 不应把这套流程当成普通自由对话，而应当把它当成项目内置 skill 来执行。
-
 ---
 
-## Hook 角色
+## 触发方式
 
-`.claude/settings.json` 的作用不是定义另一套规则，而是把 skill 规则注入 Claude 会话：
+cn-trip 通过 `/cn-trip` 命令触发，命令内容定义在 `.claude/commands/cn-trip.md`。
 
-- `SessionStart`：进入项目时加载 `cn-trip` 上下文
-- `BeforeCommand`：当用户输入 `cn-trip ...` 时显式触发这套 skill
+与 Codex 的关系：
 
-如果删除 `.claude/settings.json`，Claude 仍然能读取仓库文件，但“进入目录即可按 skill 工作”的开箱即用体验会明显变差。
-
----
-
-## Claude 与 Codex 的关系
-
-两边都使用同一套 skill 规则，但接入机制不同：
-
-| 平台 | 规则源 | 接入方式 |
+| 平台 | 规则源 | 触发方式 |
 |------|--------|----------|
-| Claude Code | `SKILL.md` + `references/excel-layout.md` | `.claude/settings.json` + `CLAUDE.md` |
+| Claude Code | `SKILL.md` + `references/excel-layout.md` | `/cn-trip` 命令 |
 | Codex | `SKILL.md` + `references/excel-layout.md` | `AGENTS.md` + `.agents/skills/cn-trip/SKILL.md` |
-
-结论：
-
-- Claude 也用 skill
-- 只是 Claude 不走 Codex 那套 `.agents/skills/...` 自动发现机制
-- Claude 走的是 hook 注入 + 项目适配说明
 
 ---
 
