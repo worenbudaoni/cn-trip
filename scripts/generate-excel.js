@@ -77,26 +77,59 @@ function dataRow(sheet, data) {
   return row;
 }
 
+function stringifyCellValue(cellValue) {
+  if (cellValue === undefined || cellValue === null) return '';
+  if (typeof cellValue === 'object') {
+    if (cellValue.richText) {
+      return cellValue.richText.map(part => part.text || '').join('');
+    }
+    if (cellValue.text) {
+      return String(cellValue.text);
+    }
+    if (cellValue.result !== undefined && cellValue.result !== null) {
+      return String(cellValue.result);
+    }
+    if (cellValue.hyperlink && cellValue.text) {
+      return String(cellValue.text);
+    }
+  }
+  return String(cellValue);
+}
+
+function visualTextWidth(text) {
+  let width = 0;
+  for (const char of text) {
+    width += /[^\x00-\xff]/.test(char) ? 2 : 1;
+  }
+  return width;
+}
+
 function autoColWidths(sheet, minWidth = 8, maxWidth = 40) {
-  sheet.columns.forEach(col => {
-    if (!col.values) return;
+  const maxColumnCount = sheet.actualColumnCount || 0;
+
+  for (let colNumber = 1; colNumber <= maxColumnCount; colNumber++) {
     let maxLen = minWidth;
-    col.values.forEach(v => {
-      if (v) {
-        const len = String(v).length;
-        if (len > maxLen) maxLen = Math.min(len + 2, maxWidth);
+
+    sheet.eachRow({ includeEmpty: true }, row => {
+      const cellText = stringifyCellValue(row.getCell(colNumber).value).trim();
+      if (!cellText) return;
+
+      const candidateWidth = Math.ceil(visualTextWidth(cellText) * 1.1) + 2;
+      if (candidateWidth > maxLen) {
+        maxLen = Math.min(candidateWidth, maxWidth);
       }
     });
-    col.width = maxLen;
-  });
+
+    sheet.getColumn(colNumber).width = maxLen;
+  }
 }
 
 function estimateWrappedLineCount(text, width) {
   if (!text) return 1;
-  const lines = String(text).split(/\r?\n/);
+  const lines = stringifyCellValue(text).split(/\r?\n/);
   return lines.reduce((count, line) => {
     const effectiveWidth = Math.max(1, Math.floor(width || 12));
-    return count + Math.max(1, Math.ceil(line.length / effectiveWidth));
+    return count + Math.max(1, Math.ceil(visualTextWidth(line) / effectiveWidth));
   }, 0);
 }
 
@@ -277,6 +310,42 @@ function ensureOutputDirectory(filePath) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+function isLikelyTemporaryPlanFile(filePath) {
+  if (!filePath) return false;
+
+  const resolvedPath = path.resolve(filePath);
+  const baseName = path.basename(resolvedPath).toLowerCase();
+  const parentDir = path.dirname(resolvedPath).toLowerCase();
+  const cwd = process.cwd().toLowerCase();
+  const tempDir = os.tmpdir().toLowerCase();
+
+  const temporaryNamePatterns = [
+    /^temp[_-]/,
+    /^tmp[_-]/,
+    /^cn-trip-temp[_-]/,
+    /_temp\./,
+    /_tmp\./
+  ];
+
+  const hasTemporaryName = temporaryNamePatterns.some(pattern => pattern.test(baseName));
+  const isInSafeCleanupDirectory = parentDir === cwd || parentDir === tempDir;
+
+  return hasTemporaryName && isInSafeCleanupDirectory;
+}
+
+function cleanupTemporaryInputFile(filePath) {
+  if (!isLikelyTemporaryPlanFile(filePath)) {
+    return;
+  }
+
+  try {
+    fs.unlinkSync(path.resolve(filePath));
+    console.log(`🧹 已清理临时文件: ${path.resolve(filePath)}`);
+  } catch (error) {
+    console.warn(`⚠️  临时文件清理失败: ${path.resolve(filePath)} (${error.message})`);
+  }
+}
+
 function needsUnicodeSafeRename(filePath) {
   return /[^\x00-\x7F]/.test(path.basename(filePath));
 }
@@ -386,6 +455,7 @@ async function main() {
 
   const writtenFile = await writeWorkbookWithSafePath(wb, outputFile);
   await validateWorkbook(ExcelJS, writtenFile);
+  cleanupTemporaryInputFile(inputPath);
   console.log(`✅ Excel 已生成: ${writtenFile}`);
 
   // 简单校验

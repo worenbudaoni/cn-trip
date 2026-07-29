@@ -45,16 +45,31 @@ Use the same numeric pattern for later confirmation steps, including:
 - export location suggestions
 - post-preview recommendation switches
 
-Collect these required constraints before planning:
+Collect constraints progressively. Do not force every field before making the next useful move.
 
-- Whether the user already has a destination
-- Departure city
-- Travel date
-- Trip length
-- Budget per person
-- Travel companions
-- Whether self-driving is allowed or preferred
-- Return plan or return constraint
+Use this minimum-constraints model:
+
+- Before recommending destinations from scratch, collect enough to avoid blind guessing:
+  - departure city
+  - rough travel date or season
+  - rough trip length
+  - rough budget per person
+- Before validating a specific route shape, collect enough to judge feasibility:
+  - departure city
+  - travel date
+  - trip length
+  - budget per person
+- Before presenting the final preview, collect the full required set:
+  - whether the user already has a destination
+  - departure city
+  - travel date
+  - trip length
+  - budget per person
+  - travel companions
+  - whether self-driving is allowed or preferred
+  - return plan or return constraint
+
+Treat province-level or otherwise overly broad destination input as partially specified, not fully locked. Examples include a province, a large region, or a destination label that still contains multiple plausible route shapes.
 
 If the user does not have a destination, collect enough preference detail to recommend one:
 
@@ -74,11 +89,20 @@ If the user has no destination:
 
 - Recommend exactly 3 candidates.
 - Prefer `2 mainstream choices + 1 better-fit niche choice`.
-- For each candidate, explain: why it fits, who it suits, rough budget range, transport suggestion, self-driving fit, and suggested trip length.
-- For each candidate, explain: why it fits, who it suits, rough budget range, transport suggestion, self-driving fit, suggested trip length, and return convenience.
+- Use a light first-pass candidate card by default: why it fits, rough per-person budget range, and suggested trip length.
+- Expand transport, self-driving, and return convenience only after the user chooses a candidate or asks for more detail.
+- If the rough budget already conflicts with the user's stated range, say so immediately and either replace that candidate or label it as a stretch option.
 
 If the user already has a destination:
 
+- If the destination is too broad to plan directly, narrow it first with exactly 3 route options plus `4` for custom input.
+- For each narrowing option, include: route shape, who it suits, suggested trip length, self-driving fit, and rough per-person budget range.
+- Present broad-destination narrowing in the same numbered format used elsewhere, for example:
+  - `1` classic route + rough per-person budget range
+  - `2` easier or lighter route + rough per-person budget range
+  - `3` niche or better-fit route + rough per-person budget range
+  - `4` user-specified cities or route
+- After the user picks a narrowed route, next collect or confirm: departure city, travel date, trip length, and budget per person before detailed planning.
 - Continue with that destination by default.
 - Challenge it only when it clearly conflicts with budget, time, companion type, or self-driving constraints.
 - If challenging it, explain the risk and offer 1 substitute.
@@ -118,6 +142,11 @@ Prefer source consolidation over source sprawl:
 ## Budget Step
 
 Treat budget breakdown as part of planning, not a post-processing appendix.
+
+Use budget in 2 passes:
+
+- Early pass: during destination recommendation or broad-destination narrowing, use a rough per-person budget range to eliminate obviously unworkable options.
+- Detailed pass: before the final preview, translate the user's budget into a fuller line-item split.
 
 Before presenting the final preview:
 
@@ -319,6 +348,10 @@ After writing the workbook, also validate presentation integrity for long text:
 - rows with long wrapped text must have sufficient height so the visible content is not clipped
 - if a row is still visually likely to be truncated, adjust row height or column width before reporting success
 - do not treat a workbook with hidden long-text content as a successful export
+- all 8 sheets must apply layout adjustment, not only `行程总览`
+- every sheet must auto-fit both header rows and body rows based on actual cell content
+- header text must remain fully visible without manual drag-resize after opening the workbook
+- column width calculation must consider Chinese full-width text instead of assuming ASCII-only width
 
 Optimize export for reliability and speed:
 
@@ -328,6 +361,7 @@ Optimize export for reliability and speed:
 - prefer one validation pass after writing; only regenerate on real failure
 - do not re-fetch transport, food, history, or weather data during the file-writing step
 - if an export path is known to be brittle in the current environment, switch to the safer path immediately instead of retrying multiple fragile methods
+- after a successful export and validation pass, delete only the temporary plan payload files created solely for that export; never delete the final `.xlsx` or user-maintained source files
 
 ## Output Style
 

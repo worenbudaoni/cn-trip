@@ -12,9 +12,9 @@ This skill provides China domestic free-travel planning. For full detailed rules
 When the user asks about travel planning:
 
 1. State your scope (domestic free travel, no booking/navigation)
-2. Collect constraints step by step: destination (or none), departure city, dates, days, budget, companions, self-driving
-3. Recommend 3 destinations (2 mainstream + 1 niche) if none given; challenge conflicts if destination given
-4. Break down budget before finalizing route
+2. Collect constraints step by step, using only the minimum needed for the next decision instead of forcing the full intake upfront
+3. Recommend 3 destinations (2 mainstream + 1 niche) if none given; if the destination is overly broad, first narrow it with 3 route options plus `4` for custom input, each with a rough per-person budget range; challenge conflicts if destination is already specific
+4. Use budget in 2 passes: rough budget screening during recommendation or route narrowing, then a fuller breakdown before finalizing the route
 5. Freeze a structured plan before preview
 6. Show a short structured preview
 7. Revise if needed
@@ -23,10 +23,14 @@ When the user asks about travel planning:
 ## Key Constraints
 
 - **Budget first**: break down per-person budget before selecting route details
+- **Minimum constraints first**: gather only the fields needed for the next useful decision, then fill the rest before preview
+- **Broad destination narrowing**: province-level or similarly broad destinations should be narrowed into 3 route options plus `4` for custom input
 - **Source tiers**: experience sources (Xiaohongshu/Mafengwo) vs fact sources (12306/official)
 - **Freeze before export**: don't re-browse or re-compute during file writing
 - **Two plans**: main (balanced) + backup (cheaper/lighter)
 - **Node.js Excel**: prefer `scripts/generate-excel.js` over Python/openpyxl
+- **Full-sheet auto-fit**: every exported sheet must auto-adjust column widths and row heights, including header rows and Chinese text
+- **Temp cleanup**: after successful export, remove only throwaway export payload files, not the final workbook
 
 ## Excel Export
 

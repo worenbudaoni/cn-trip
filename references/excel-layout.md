@@ -272,6 +272,9 @@ Long-text presentation is part of export integrity:
 - long cells must use wrapped text instead of overflowing visually
 - rows containing long notes, remarks, food recommendations, or source explanations must be tall enough to show the wrapped content
 - do not leave itinerary or note cells visually clipped just because the raw text exists in the cell
+- all sheets must receive width and height auto-adjustment, including `详细行程`, `预算拆分`, `出行准备清单`, `美食攻略`, `景点历史人文`, and `信息来源`
+- auto-adjustment must include the header row, not just body rows
+- width estimation should account for Chinese text width so titles and headers do not appear half-cut on first open
 
 ## Save Flow
 
@@ -302,7 +305,10 @@ Before reporting success, verify all of the following:
 - Worksheet headers keep Chinese text intact.
 - Representative body cells keep Chinese text intact.
 - Representative long-text rows are not visually clipped by insufficient row height.
+- Representative header cells across multiple sheets are fully visible without manual resize.
+- Representative columns across multiple sheets are auto-sized from actual content, not left at a default fixed width.
 - The final file name matches `出发日期_目的地_天数_旅行方案.xlsx`.
 - The final save path is reported back to the user.
 - The workbook contains all 8 expected sheets with the exact intended names.
 - Export mode matches user intent: default `standard`, only `detailed` when requested.
+- Temporary files created only for export are cleaned up after success, while the final workbook remains untouched.
